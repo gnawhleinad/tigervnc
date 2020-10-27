@@ -429,7 +429,6 @@ potentiallyLoadConfigurationFile(char *vncServerName)
   }
 }
 
-#ifndef WIN32
 static int
 interpretViaParam(char *remoteHost, int *remotePort, int localPort)
 {
@@ -480,7 +479,11 @@ createTunnel(const char *gatewayHost, const char *remoteHost,
   setenv("R", rport, 1);
   setenv("L", lport, 1);
   if (!cmd)
+#ifdef WIN32
+    cmd = "C:\\Windows\\System32\\OpenSSH\\ssh -f -L \"$L\":\"$H\":\"$R\" \"$G\" sleep 20";
+#else
     cmd = "/usr/bin/ssh -f -L \"$L\":\"$H\":\"$R\" \"$G\" sleep 20";
+#endif
   /* Compatibility with TigerVNC's method. */
   cmd2 = strdup(cmd);
   while ((percent = strchr(cmd2, '%')) != NULL)
@@ -503,7 +506,6 @@ static int mktunnel()
 
   return 0;
 }
-#endif /* !WIN32 */
 
 int main(int argc, char** argv)
 {
@@ -600,7 +602,6 @@ int main(int argc, char** argv)
 
   Socket *sock = NULL;
 
-#ifndef WIN32
   /* Specifying -via and -listen together is nonsense */
   if (listenMode && strlen(via.getValueStr()) > 0) {
     // TRANSLATORS: "Parameters" are command line arguments, or settings
@@ -609,7 +610,6 @@ int main(int argc, char** argv)
     exit_vncviewer(_("Parameters -listen and -via are incompatible"));
     return 1; /* Not reached */
   }
-#endif
 
   if (listenMode) {
     std::list<SocketListener*> listeners;
@@ -668,10 +668,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
-#ifndef WIN32
     if (strlen (via.getValueStr()) > 0 && mktunnel() != 0)
       usage(argv[0]);
-#endif
   }
 
   CConn *cc = new CConn(vncServerName, sock);
